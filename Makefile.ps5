@@ -8,6 +8,8 @@ CFLAGS := -O3 -I ./src -I ./include \
 	  `${PS5_SYSROOT}/bin/sdl2-config --cflags --libs` \
 	  -lkernel_sys -lSDL2main -lSDL2_mixer
 
+CFLAGS+=-Wall -DFEATURE_SOUND
+
 SRCS := src/am_map.c src/d_event.c src/d_items.c src/d_iwad.c src/d_loop.c src/d_main.c src/d_mode.c \
 	src/d_net.c src/doomdef.c src/doomstat.c src/dstrings.c src/dummy.c src/f_finale.c src/f_wipe.c \
 	src/g_game.c src/gusconf.c src/hu_lib.c src/hu_stuff.c src/i_cdmus.c src/icon.c src/i_endoom.c \
