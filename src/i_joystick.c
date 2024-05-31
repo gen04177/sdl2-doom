@@ -1,5 +1,4 @@
 #include <SDL2/SDL.h>
-
 #include <stdio.h>
 #include <string.h>
 
@@ -13,21 +12,19 @@
 
 // When an axis is within the dead zone, it is set to zero.
 // This is 5% of the full range:
-
-#define DEAD_ZONE (32768 / 3)
+#define DEAD_ZONE (32768 / 20)
 
 static SDL_GameController *controller = NULL;
 
 // Configuration variables:
-
-// Standard default.cfg Joystick enable/disable
-
 static int usejoystick = 0;
 
 // Virtual to physical button joystick button mapping. By default this
 // is a straight mapping.
 static int joystick_physical_buttons[NUM_VIRTUAL_BUTTONS] = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+    SDL_CONTROLLER_BUTTON_A, SDL_CONTROLLER_BUTTON_B, SDL_CONTROLLER_BUTTON_X, SDL_CONTROLLER_BUTTON_Y,
+    SDL_CONTROLLER_BUTTON_BACK, SDL_CONTROLLER_BUTTON_GUIDE, SDL_CONTROLLER_BUTTON_START,
+    SDL_CONTROLLER_BUTTON_LEFTSTICK, SDL_CONTROLLER_BUTTON_RIGHTSTICK, SDL_CONTROLLER_BUTTON_LEFTSHOULDER
 };
 
 void I_ShutdownJoystick(void)
@@ -49,6 +46,7 @@ void I_InitJoystick(void)
 
     if (SDL_Init(SDL_INIT_GAMECONTROLLER) < 0)
     {
+        printf("I_InitJoystick: SDL_Init failed: %s\n", SDL_GetError());
         return;
     }
 
@@ -112,7 +110,7 @@ static int GetButtonsState(void)
 }
 
 // Read the state of an axis, inverting if necessary.
-static int GetAxisState(int axis, int invert)
+static int GetAxisState(SDL_GameControllerAxis axis, int invert)
 {
     int result;
 
