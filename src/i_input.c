@@ -13,7 +13,6 @@
 // GNU General Public License for more details.
 //
 
-
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
@@ -46,118 +45,167 @@ static unsigned short s_KeyQueue[KEYQUEUE_SIZE];
 static unsigned int s_KeyQueueWriteIndex = 0;
 static unsigned int s_KeyQueueReadIndex = 0;
 
+static SDL_GameController *controller = NULL;
 
 //TODO: Convert to key-map
 static unsigned char toDoomKey(unsigned int key)
 {
-  switch (key)
-  {
-    case SDLK_RETURN:
-      key = KEY_ENTER;
-      break;
-    case SDLK_F1:
-      key = KEY_F1;
-      break;
-    case SDLK_F2:
-      key = KEY_F2;
-      break;
-    case SDLK_F3:
-      key = KEY_F3;
-      break;
-    case SDLK_LALT:
-    case SDLK_RALT:
-      key = KEY_LALT;
-      break;
-    case SDLK_ESCAPE:
-      key = KEY_ESCAPE;
-      break;
-    case SDLK_a:
-    case SDLK_LEFT:
-      key = KEY_LEFTARROW;
-      break;
-    case SDLK_d:
-    case SDLK_RIGHT:
-      key = KEY_RIGHTARROW;
-      break;
-    case SDLK_w:
-    case SDLK_UP:
-      key = KEY_UPARROW;
-      break;
-    case SDLK_s:
-    case SDLK_DOWN:
-      key = KEY_DOWNARROW;
-      break;
-    case SDLK_LCTRL:
-    case SDLK_RCTRL:
-      key = KEY_FIRE;
-      break;
-    case SDLK_SPACE:
-      key = KEY_USE;
-      break;
-    case SDLK_LSHIFT:
-    case SDLK_RSHIFT:
-      key = KEY_RSHIFT;
-      break;
-    case SDL_BUTTON_RIGHT:
-    case SDL_BUTTON_LEFT:
-      key = KEY_FIRE;
-      break;
-    case SDL_BUTTON_MIDDLE:
-      key = KEY_USE;
-      break;
-    default:
-      key = tolower(key);
-      break;
+    switch (key)
+    {
+        case SDLK_RETURN:
+            key = KEY_ENTER;
+            break;
+        case SDLK_F1:
+            key = KEY_F1;
+            break;
+        case SDLK_F2:
+            key = KEY_F2;
+            break;
+        case SDLK_F3:
+            key = KEY_F3;
+            break;
+        case SDLK_LALT:
+        case SDLK_RALT:
+            key = KEY_LALT;
+            break;
+        case SDLK_ESCAPE:
+            key = KEY_ESCAPE;
+            break;
+        case SDLK_a:
+        case SDLK_LEFT:
+            key = KEY_LEFTARROW;
+            break;
+        case SDLK_d:
+        case SDLK_RIGHT:
+            key = KEY_RIGHTARROW;
+            break;
+        case SDLK_w:
+        case SDLK_UP:
+            key = KEY_UPARROW;
+            break;
+        case SDLK_s:
+        case SDLK_DOWN:
+            key = KEY_DOWNARROW;
+            break;
+        case SDLK_LCTRL:
+        case SDLK_RCTRL:
+            key = KEY_FIRE;
+            break;
+        case SDLK_SPACE:
+            key = KEY_USE;
+            break;
+        case SDLK_LSHIFT:
+        case SDLK_RSHIFT:
+            key = KEY_RSHIFT;
+            break;
+        case SDL_BUTTON_RIGHT:
+        case SDL_BUTTON_LEFT:
+            key = KEY_FIRE;
+            break;
+        case SDL_BUTTON_MIDDLE:
+            key = KEY_USE;
+            break;
+        default:
+            key = tolower(key);
+            break;
     }
 
-  return key;
+    return key;
+}
+
+static unsigned char toDoomControllerButton(unsigned int button)
+{
+    switch (button)
+    {
+        case SDL_CONTROLLER_BUTTON_A:
+            return KEY_ENTER;
+        case SDL_CONTROLLER_BUTTON_B:
+            return KEY_FIRE;
+        case SDL_CONTROLLER_BUTTON_X:
+            return KEY_RSHIFT;
+        case SDL_CONTROLLER_BUTTON_Y:
+             return KEY_USE;
+        case SDL_CONTROLLER_BUTTON_START:
+            return KEY_ESCAPE;
+	case SDL_CONTROLLER_BUTTON_TOUCHPAD:
+	    return KEY_F3;
+    	case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+	   return KEY_F1;
+    	case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+	   return KEY_F2;
+	case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+            return KEY_LEFTARROW;
+        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+            return KEY_RIGHTARROW;
+        case SDL_CONTROLLER_BUTTON_DPAD_UP:
+            return KEY_UPARROW;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+            return KEY_DOWNARROW;
+        default:
+            return 0;
+    }
 }
 
 static void queueKeyPress(int pressed, unsigned int keyCode)
 {
-  unsigned char key = toDoomKey(keyCode);
-  unsigned short keyData = (pressed << 8) | key;
+    unsigned char key = toDoomKey(keyCode);
+    unsigned short keyData = (pressed << 8) | key;
 
-  s_KeyQueue[s_KeyQueueWriteIndex] = keyData;
-  s_KeyQueueWriteIndex++;
-  s_KeyQueueWriteIndex %= KEYQUEUE_SIZE;
+    s_KeyQueue[s_KeyQueueWriteIndex] = keyData;
+    s_KeyQueueWriteIndex++;
+    s_KeyQueueWriteIndex %= KEYQUEUE_SIZE;
+}
+
+static void queueControllerButtonPress(int pressed, unsigned int button)
+{
+    unsigned char key = toDoomControllerButton(button);
+    if (key != 0)
+    {
+        unsigned short keyData = (pressed << 8) | key;
+
+        s_KeyQueue[s_KeyQueueWriteIndex] = keyData;
+        s_KeyQueueWriteIndex++;
+        s_KeyQueueWriteIndex %= KEYQUEUE_SIZE;
+    }
 }
 
 static void SDL_PollEvents() 
 {
-  SDL_Event e;
+    SDL_Event e;
 
-  while (SDL_PollEvent(&e))
-  {
-    if (e.type == SDL_QUIT)
+    while (SDL_PollEvent(&e))
     {
-      atexit(SDL_Quit);
-      exit(1);
-    }
+        if (e.type == SDL_QUIT)
+        {
+            atexit(SDL_Quit);
+            exit(1);
+        }
 
-    if (e.type == SDL_KEYDOWN) 
-    {
-      //printf("KeyPress:%d sym:%d\n", e.xkey.keycode, sym);
-      queueKeyPress(1, e.key.keysym.sym);
-    } 
-    else if (e.type == SDL_KEYUP) 
-    {
-      //printf("KeyRelease:%d sym:%d\n", e.xkey.keycode, sym);
-      queueKeyPress(0, e.key.keysym.sym);
+        if (e.type == SDL_KEYDOWN) 
+        {
+            queueKeyPress(1, e.key.keysym.sym);
+        } 
+        else if (e.type == SDL_KEYUP) 
+        {
+            queueKeyPress(0, e.key.keysym.sym);
+        }
+        else if(e.type == SDL_MOUSEBUTTONDOWN) 
+        {
+            queueKeyPress(1, e.button.button);
+        }
+        else if(e.type == SDL_MOUSEBUTTONUP)
+        {
+            queueKeyPress(0, e.button.button);
+        }
+        else if(e.type == SDL_CONTROLLERBUTTONDOWN)
+        {
+            queueControllerButtonPress(1, e.cbutton.button);
+        }
+        else if(e.type == SDL_CONTROLLERBUTTONUP)
+        {
+            queueControllerButtonPress(0, e.cbutton.button);
+        }
     }
-    else if(e.type == SDL_MOUSEBUTTONDOWN) 
-    {
-      //printf("SDL_MOUSE_PRESSED: %d\n", e.button.button);
-      queueKeyPress(1, e.button.button);
-    }
-    else if(e.type == SDL_MOUSEBUTTONUP)
-    {
-      //printf("SDL_MOUSE_RELEASED: %d\n", e.button.button);
-      queueKeyPress(0, e.button.button);
-    }
-
-  }
-
 }
 
 int GetKey(int* pressed, unsigned char* doomKey)
@@ -187,7 +235,6 @@ int GetKey(int* pressed, unsigned char* doomKey)
 int vanilla_keyboard_mapping = 1;
 
 // Is the shift key currently down?
-
 static int shiftdown = 0;
 
 // Lookup table for mapping ASCII characters to their equivalent when
@@ -232,13 +279,12 @@ static const char shiftxform[] =
 };
 
 // Get the equivalent ASCII (Unicode?) character for a keypress.
-
 static unsigned char GetTypedChar(unsigned char key)
 {
     // Is shift held down?  If so, perform a translation.
     if (shiftdown > 0)
     {
-        if (key >= 0 && key < arrlen(shiftxform))
+        if (key >= 0 && key < sizeof(shiftxform))
         {
             key = shiftxform[key];
         }
@@ -266,19 +312,18 @@ static void UpdateShiftStatus(int pressed, unsigned char key)
     }
 }
 
-
 void I_GetEvent(void)
 {
     event_t event;
     int pressed;
     unsigned char key;
     
-	while (GetKey(&pressed, &key))
+    while (GetKey(&pressed, &key))
     {
         UpdateShiftStatus(pressed, key);
 
         // process event
-        if(pressed)
+        if (pressed)
         {
             // data1 has the key pressed, data2 has the character
             // (shift-translated, etc)
@@ -311,11 +356,30 @@ void I_GetEvent(void)
             break;
         }
     }
-
 }
 
 void I_InitInput(void)
 {
-    
-}
+    if (SDL_Init(SDL_INIT_GAMECONTROLLER) < 0)
+    {
+        fprintf(stderr, "Failed to initialize SDL GameController: %s\n", SDL_GetError());
+        exit(1);
+    }
 
+    // Open the first available controller
+    for (int i = 0; i < SDL_NumJoysticks(); ++i)
+    {
+        if (SDL_IsGameController(i))
+        {
+            controller = SDL_GameControllerOpen(i);
+            if (controller)
+            {
+                break;
+            }
+            else
+            {
+                fprintf(stderr, "Could not open gamecontroller %i: %s\n", i, SDL_GetError());
+            }
+        }
+    }
+}
