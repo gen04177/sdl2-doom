@@ -15,9 +15,10 @@
 //      System-specific joystick interface.
 //
 
-
 #ifndef __I_JOYSTICK__
 #define __I_JOYSTICK__
+
+#include <SDL2/SDL.h>
 
 // Number of "virtual" joystick buttons defined in configuration files.
 // This needs to be at least as large as the number of different key
@@ -51,7 +52,7 @@
 
 // Get the hat number from a hat axis value.
 #define HAT_AXIS_HAT(axis)         ((axis) & 0xff)
-// Which axis of the hat? (horizonal or vertical)
+// Which axis of the hat? (horizontal or vertical)
 #define HAT_AXIS_DIRECTION(axis)   (((axis) >> 8) & 0xff)
 
 #define CREATE_HAT_AXIS(hat, direction) \
@@ -67,4 +68,3 @@ void I_UpdateJoystick(void);
 void I_BindJoystickVariables(void);
 
 #endif /* #ifndef __I_JOYSTICK__ */
-
